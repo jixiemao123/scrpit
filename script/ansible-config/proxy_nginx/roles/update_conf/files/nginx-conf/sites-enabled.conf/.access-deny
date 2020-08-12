@@ -1,0 +1,32 @@
+# 限制用户访问.svn、git、csv等版本控制相关的文件
+location ~ ^.*\.(svn|git|cvs)/?.*$ {
+    return 444;
+}
+
+location ~ ^.*\.(log|logs|sql|gz|bz2|csv)$ {
+    return 444;
+}
+
+set $is_tradelist_limit '0';
+
+# cookie中设备唯一ID，如：Ksw2Rt5QQ9EgB1OKnNUo5p5
+if ($http_cookie ~* "__ckguid=(.*?)(;|$)"){
+    set $ck_guid $1;
+}
+
+# cookie中保存的ci_session，如：b0e9eca1be5d388c6e522b47facfe419f461305e
+if ($http_cookie ~* "ci_session=(.*?)(;|$)"){
+    set $phpsessid $1;
+}
+
+# 对登录用户访问指定URI限速.
+if ($phpsessid !~ ^$) {
+    set $is_trade_grabtrade_limit '1';
+}
+if ($uri !~ ^/trade/grabtrade.*$) {
+    set $is_trade_grabtrade_limit '0';
+}
+if ($is_trade_grabtrade_limit ~ ^1$) {
+    set $trade_grabtrade_limit $phpsessid$uri;
+}
+

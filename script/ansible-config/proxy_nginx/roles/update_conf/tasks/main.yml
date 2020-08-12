@@ -1,0 +1,42 @@
+---
+########################################
+#
+# 模块功能：更新nginx配置文件（全部配置）。
+#
+########################################
+
+# 同步proxy配置目录，排除的proxy主机
+- name: rsync conf to proxy
+  synchronize:
+    src: nginx-conf/
+    dest: /usr/local/nginx/conf/
+    rsync_opts:
+      - "-rltpog"
+      - "--delete"
+      - "--delete-after"
+      - "--exclude=.git"
+      - "--exclude=.svn"
+
+# 清除所有版本控制文件
+- name: clean ".git .svn" file
+  shell: "{{item}}"
+  args:
+    chdir: /usr/local/nginx/conf/
+  with_items:
+    - cd /usr/local/nginx/conf/ && find -name "*.svn" -o -name "*.git" | xargs -n20 rm -rf
+
+# 根据主机配置生成nginx.conf文件
+- name: make nginx.conf
+  template: src=nginx.conf.j2 dest=/usr/local/nginx/conf/nginx.conf owner=webuser group=webuser mode=0644
+
+# 修改文件文件权限
+- name: chown -R webuser:webuser /usr/local/nginx/conf/
+  shell: "{{item}}"
+  args:
+    chdir: /usr/local/nginx/conf/
+  with_items:
+    - chown -R webuser:webuser /usr/local/nginx/conf
+
+# 重新加载nginx配置
+- name: service nginx reload
+  service: name=nginx state=reloaded

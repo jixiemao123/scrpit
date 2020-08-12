@@ -1,0 +1,11 @@
+---
+########################################
+#
+# 模块功能：更新PHP配置文6件
+#
+########################################
+
+#- name: update php-fpm.conf
+#  template: src=php-fpm.conf.j2 dest=/usr/local/etc/php-fpm.conf owner=root group=root mode=0644
+- name: copy php.ini configure
+  copy: src=php.ini dest=/usr/local/lib/php.ini owner=root group=root mode="u=rw,g=r,o=r"

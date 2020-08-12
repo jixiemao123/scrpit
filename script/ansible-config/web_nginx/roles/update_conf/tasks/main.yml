@@ -1,0 +1,34 @@
+---
+########################################
+#
+# 模块功能：更新nginx配置文件（全部配置）。
+#
+########################################
+
+- name: rsync all conf
+  synchronize:
+    src: nginx-conf/
+    dest: /usr/local/nginx/conf/
+    rsync_opts:
+      - "-rltpog"
+      - "--delete"
+      - "--delete-after"
+      - "--exclude=.git"
+      - "--exclude=.svn"
+
+- name: make nginx.conf
+  template: src=nginx.conf.j2 dest=/usr/local/nginx/conf/nginx.conf owner=webuser group=webuser mode=0644
+
+#- name: make web_nginx_log_by.lua
+#  template: src=web_nginx_log_by.lua.j2 dest=/usr/local/nginx/conf/lua/web_nginx_log_by.lua owner=webuser group=webuser mode=0644
+
+- name: chown -R webuser:webuser /usr/local/nginx/conf/
+  shell: "{{item}}"
+  args:
+    chdir: /usr/local/nginx/conf/
+  with_items:
+    - chown -R webuser:webuser /usr/local/nginx/conf
+
+- name: service nginx reload
+  service: name=nginx state=reloaded
+

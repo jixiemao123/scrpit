@@ -1,0 +1,23 @@
+server {
+    listen 80 default_server;
+    server_name _;
+    location / {
+        allow 10.0.0.0/8;
+        deny all;
+        stub_status on;
+    }
+    access_log off;
+}
+
+server {
+    listen 443 default_server;
+    server_name _;
+    charset utf-8;
+    include .sites-enabled.certificate/.ssl.conf;
+    location / {
+        return 403;
+    }
+    access_log off;
+}
+
+

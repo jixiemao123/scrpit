@@ -1,0 +1,5 @@
+---
+- hosts: "{{ hosts }}"
+  gather_facts: True
+  roles:
+    - install_php-7.0.19

@@ -1,0 +1,42 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+{% set vars = {'first_ip': '127.0.0.1'} -%}
+{% for ip4 in ansible_all_ipv4_addresses -%}
+    {% if ip4|ipaddr('10.201.12.0/24') and vars.first_ip=='127.0.0.1' -%}
+        {% if vars.update({'first_ip': ip4}) -%} {% endif -%}
+    {% elif ip4|ipaddr('10.27.0.0/16') and vars.first_ip=='127.0.0.1' -%}
+        {% if vars.update({'first_ip': ip4}) -%} {% endif -%}
+    {% endif -%}
+{% endfor -%}
+127.0.0.1 {{ansible_hostname}}
+{{ vars.first_ip }} {{ansible_hostname}}
+
+#add info
+
+10.41.48.130 web01
+10.41.24.57 web02
+
+127.0.0.1 tw.valueq.com
+123.59.56.141 gitlab-team.smzdm.com
+
+#########################################
+#### mysql ####
+10.41.49.191 www_valueq_mysql_m01
+10.41.49.191 www_valueq_mysql_s01
+10.41.49.191 www_valueq_mysql_s02
+
+#### redis ####
+10.41.143.88 www_valueq_cache_redis_m01
+####爬虫数据redis###
+10.41.134.243 spider_valueq_cache_redis
+
+#鉴黄接口（数美）
+106.75.47.133 ployapi.smzdm.com
+106.75.47.133 postapi.smzdm.com
+
+127.0.0.1    i.api.valueq.com
+10.41.24.57 img.api.valueq.com
+45.43.63.129 i.spider.valueq.com
+#cat监控
+10.35.124.81 cat.valueq.com

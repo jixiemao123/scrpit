@@ -1,0 +1,13 @@
+106.75.22.213 static.valueq.com
+106.75.22.213 www.valueq.com
+106.75.22.213 affiliate.valueq.com
+106.75.22.213 affiliate.pongoshare.cn
+106.75.22.213 admin-aff.valueq.com
+106.75.22.213 admin-aff.pongoshare.cn 
+106.75.22.213 go.valueq.com
+106.75.22.213 go.pongoshare.cn
+106.75.22.213 us.valueq.com
+106.75.22.213 admin.valueq.com
+106.75.22.213 es-aff-test.valueq.com
+117.50.104.83 test-rw-pma.valueq.com
+106.75.22.213 dsp.pongoshare.cn

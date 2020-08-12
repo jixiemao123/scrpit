@@ -1,0 +1,18 @@
+---
+########################################
+#
+# 模块功能：更新 web-php 服务器 /etc/hosts。
+#
+########################################
+
+# 备份 /etc/hosts
+- name: backup /etc/hosts
+  shell: "{{item}}"
+  args:
+      chdir: /etc/
+  with_items:
+      - cp -p /etc/hosts /etc/hosts.backup
+
+#更新 /etc/hosts
+- name: initialize hosts
+  template: src=hosts.j2 dest=/etc/hosts owner=root group=root mode=0644

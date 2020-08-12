@@ -1,0 +1,177 @@
+---
+########################################
+#
+# 模块功能：安装并初始化PHP-WEB的相关服务和目录结构。
+#
+########################################
+
+# 安装nginx、php-fpm所需的依赖软件
+- name: install require software
+  yum: name={{ item }} state=present
+  with_items:
+    - pcre
+    - pcre-devel
+    - openssl
+    - openssl-devel
+    - libxml2
+    - libxml2-devel
+    - libjpeg
+    - libjpeg-devel
+    - libpng
+    - libpng-devel
+    - freetype
+    - freetype-devel
+    - libmcrypt
+    - libmcrypt-devel
+    - inotify-tools
+    - bzip2
+    - bzip2-devel
+    - patch
+    - librabbitmq-devel
+    - unzip
+
+# 复制php-fpm相关源码包并在客户端编译安装。
+- name: copy php-fpm
+  copy: src=source dest=/tmp/ owner=root group=root
+
+- name: update php-fpm.conf configure
+  template: src=php-fpm.conf.j2 dest=/usr/local/etc/php-fpm.conf owner=root group=root mode=0644
+- name: copy php.ini configure
+  copy: src=php.ini dest=/usr/local/lib/php.ini owner=root group=root mode="u=rw,g=r,o=r"
+
+- name: clean source
+  file: dest=/tmp/source/{{ item }} state=absent
+  with_items:
+      - php-7.1.13
+      - nginx-1.6.1
+      - redis-3.1.2
+      - amqp-1.9.0
+      - mongodb-1.2.9
+      - phpng-xhprof-master
+
+- name: Uncompression
+  unarchive: src=/tmp/source/{{ item }} dest=/tmp/source copy=no
+  with_items:
+      - php-7.1.13.tar.gz
+      - nginx-1.6.1.tar.gz
+      - redis-3.1.2.tgz
+      - amqp-1.9.0.tgz
+      - mongodb-1.2.9.tgz
+      - phpng-xhprof-master.zip
+
+- name: configure php source
+  shell: "{{ item }}"
+  args:
+      chdir: /tmp/source/php-7.1.13/
+  with_items:
+      - ./configure --enable-fpm --with-mcrypt --with-zlib --with-gd --with-curl --enable-mbstring --with-jpeg-dir --with-iconv --enable-sockets --with-mysqli --enable-exif --with-png-dir --with-freetype-dir --with-openssl --with-bz2 --enable-zip --enable-soap --with-pdo-mysql --enable-ftp --enable-bcmath
+      - make -j
+      - mkdir -p /var/run/php/
+      - make install
+
+- name: configure redis-3.1.2  source
+  shell: "{{ item }}"
+  args:
+      chdir: /tmp/source/redis-3.1.2/
+  with_items:
+      - /usr/local/bin/phpize
+      - ./configure --with-php-config=/usr/local/bin/php-config
+      - make -j
+      - make install
+
+- name: configure amqp  source
+  shell: "{{ item }}"
+  args:
+      chdir: /tmp/source/amqp-1.9.0/
+  with_items:
+      - /usr/local/bin/phpize
+      - ./configure
+      - make -j
+      - make install
+
+- name: configure mongodb-1.2.9  source
+  shell: "{{ item }}"
+  args:
+      chdir: /tmp/source/mongodb-1.2.9/
+  with_items:
+      - /usr/local/bin/phpize
+      - ./configure
+      - make -j
+      - make install
+
+- name: configure phpng-xhprof  source
+  shell: "{{ item }}"
+  args:
+      chdir: /tmp/source/phpng-xhprof-master/
+  with_items:
+      - /usr/local/bin/phpize
+      - ./configure
+      - make -j
+      - make install
+
+- name: configure nginx-1.6.1  source
+  shell: "{{ item }}"
+  args:
+      chdir: /tmp/source/nginx-1.6.1/
+  with_items:
+      - ./configure --prefix=/usr/local --user=webuser --group=webuser --with-http_stub_status_module --with-http_ssl_module --with-md5=/usr/lib --with-sha1=/usr/lib --with-http_realip_module --with-luajit
+      - make -j
+      - make install
+
+- name: clean source
+  file: dest=/tmp/source state=absent
+
+- name: initialize /dev/shm/directory
+  file: dest={{ item }} state=directory owner=webuser group=webuser mode="u=rwx,g=rwx,o=rx"
+  with_items:
+      - /dev/shm/cache
+      - /dev/shm/main
+      - /dev/shm/link
+      - /dev/shm/tmp
+      - /dev/shm/http
+      - /dev/shm/session
+
+- name: initialize /data/directory
+  file: dest={{ item }} state=directory owner=webuser group=webuser mode="u=rwx,g=rx,o=rx"
+  with_items:
+      - /data/www/
+      - /data/bgm/
+      - /data/webroot/
+      - /data/tools/
+      - /data/logs/nginx/
+      - /data/logs/php/
+
+- name: Add rc.local
+  lineinfile: dest=/etc/rc.local line="#add info"
+- name: Add rc.local-init-directory
+  lineinfile: dest=/etc/rc.local line="{{ item }}"
+  with_items:
+      - mkdir /dev/shm/cache
+      - mkdir /dev/shm/main
+      - mkdir /dev/shm/link
+      - mkdir /dev/shm/tmp
+      - mkdir /dev/shm/http
+      - mkdir /dev/shm/session
+      - chown -R webuser:webuser /dev/shm/
+
+- name: update authorized_key
+  authorized_key: user=root key="{{ item }}"
+  with_file:
+      - public_keys/id_rsa-12-2.pub
+      - public_keys/id_rsa-uhost-62.pub
+
+#增加nginx的service服务
+- name: copy nginx service to /etc/systemd/system
+  copy: src=nginx.service dest=/etc/systemd/system/nginx.service owner=root group=root mode="0755"
+- name: chkconfig --add nginx
+  shell: systemctl enable nginx
+- name: nginx restart
+  shell: systemctl restart nginx
+
+#增加php-fpm的service服务
+- name: copy php-fpm service to /etc/systemd/system
+  copy: src=php-fpm.service dest=/etc/systemd/system/php-fpm.service owner=root group=root mode="0755"
+- name: chkconfig --add php-fpm
+  shell: systemctl enable php-fpm
+- name: php-fpm restart
+  shell: systemctl restart php-fpm

@@ -1,0 +1,62 @@
+user  webuser webuser;
+worker_processes {{ ansible_processor_vcpus-1 if ansible_processor_vcpus>2 else 3 }};
+
+error_log /data/logs/nginx/nginx_error.log error;
+
+pid        logs/nginx.pid;
+
+worker_rlimit_nofile 65535;
+events {
+    use epoll;
+    worker_connections 65535;
+}
+
+
+http {
+    proxy_cache_path  /dev/shm/valueq/link levels=1:2 keys_zone=LINK:100m max_size=1000m inactive=5m;
+    proxy_cache_path  /dev/shm/valueq/proxy_cache/pc.default levels=1:2 keys_zone=PCDEFAULT:1000m max_size=1200m inactive=5m;
+    proxy_cache_lock on;
+    proxy_cache_lock_timeout 15s;
+    proxy_cache_use_stale error timeout updating http_502;
+    proxy_temp_path /dev/shm/valueq/tmp;
+    max_ranges 1;
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    log_format access '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for" "$scheme" "$host" '
+                      '$request_time $upstream_response_time';
+#    log_format access_body '$remote_addr - $remote_user [$time_local] "$request" '
+#                      '$status $body_bytes_sent "$http_referer" '
+#                      '"$http_user_agent" "$http_x_forwarded_for" "$host" "$server_port" "$request_body"';
+
+    access_log /data/logs/nginx/http.access.log access;
+    sendfile on;
+
+    keepalive_timeout 30;
+
+    client_header_buffer_size 4k;
+    client_max_body_size 10m;
+
+    underscores_in_headers on;
+
+    gzip on;
+    gzip_http_version 1.1;
+    gzip_vary on;
+    gzip_comp_level 6;
+    gzip_proxied any;
+    gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript;
+    gzip_buffers 16 8k;
+    #gzip_disable "MSIE [1-6].(?!.*SV1)";
+
+    resolver 119.29.29.29 180.76.76.76 114.114.114.114 8.8.8.8 valid=3600s;
+#    lua_package_path "/usr/local/nginx/conf/lua/lib/?.lua;;";
+#    log_by_lua_file conf/lua/web_nginx_log_by.lua;
+
+    include upstream-enabled.conf/*.conf;
+
+    include sites-enabled.conf/default_server_all;
+    include sites-enabled.conf/*.conf;
+
+}
